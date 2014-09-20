@@ -1,0 +1,109 @@
+---
+title       : Modeling on a KM Dataset using Regression
+subtitle    : First impressions 
+author      : Joao Pedro Albino
+job         : Sao Paulo State University
+logo        : km_logo.jpg
+framework   : io2012        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : zenburn        # 
+url:
+  lib:   ./libraries 
+  assets: ./assets
+widgets     : [mathjax]            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+knit        : slidify::knit2slides
+---
+
+In the discussion presented here, we'll use regression analysis for estimating the relationships among variables.
+We'll use a R dataset (SubPerfData.Rda) with 81 observations and 26 variable.
+The data were gathered and tabulated using a questionnaire applied in a number of Brazilian firms.
+
+``` {r loading_libs, echo=FALSE}
+library(knitr)
+hook1 <- function(x){ gsub("```\n*```r*\n*", "", x) }
+hook2 <- function(x){ gsub("```\n+```\n", "", x) }
+knit_hooks$set(document = hook1)
+
+```
+
+```{r loading_files, cache=TRUE}
+# Loading data file
+SubPerfData <- readRDS(file="SubPerfData.Rda")
+```
+
+We extract the interested columns, taking the ones necessary for performance calculations.
+Now we have a dataset with 81 observations and 7 variables.
+
+```{r subset_data, cache=TRUE}
+##Exploring dataset variables
+subdata <- with(SubPerfData, data.frame(NumFunc, ReceitaB, SP,SL,SC,ST,SM))
+```
+
+The variables stands for:
+.NumFunc: Number of employees
+.ReceitaB: Gross Income
+.SP: Performance in Process
+.SL: Performance in Leadership
+.SC: Performance in Culture
+.ST: Performance in Technology
+.SM: Performance in Metrics 
+
+---
+
+We want to fit a model using Regression Analysis.
+To understand which among the independent variables are related to the dependent variable.
+To explore the forms of these relationships.
+First, let's look at the correlation between all the variables in the subset.
+
+``` {r explore_data, cache=TRUE}
+round(cor(subdata, use = "pairwise.complete.obs"), digits = 2) 
+```
+Now, with the results above, lets make plots for two sets of strong variable correlation 
+
+```{r fitting_one, cache=TRUE}
+fitRN<-lm(ReceitaB ~ NumFunc, data=subdata)
+fitS<-lm(SL ~ SM, data=subdata)
+```
+
+---
+
+```{r ploting_one,  echo=FALSE, results='asis'}
+par(fig=c(0,0.5,0,0.8))
+
+plot(SubPerfData$NumFunc, SubPerfData$ReceitaB, xlab = "Employees", 
+     ylab ="Gross Income", bg= ifelse(SubPerfData$FazGC == 1, "green", "red"), 
+     col="black", cex=0.8, pch=21, frame=FALSE)
+legend(1,5.5, c("KM", "Not KM"), 
+       col = c("green", "red"), lty=c(1,1), lwd=c(2.0,2.0), 
+       text.col = "black",bg = "gray90")
+abline(fitRN, lwd=2)
+
+par(fig=c(0.5,1,0,0.8), new=TRUE)
+plot(SubPerfData$SL, SubPerfData$SM, xlab = "KM Metrics", 
+     ylab ="Leadership", bg= ifelse(SubPerfData$FazGC == 1, "green", "red"), 
+     col="black", cex=0.8, pch=21, frame=FALSE)
+legend(4,20, c("KM", "Not KM"), 
+       col = c("green", "red"), lty=c(1,1), lwd=c(2.0,2.0), 
+       text.col = "black",bg = "gray90")
+abline(fitS, lwd=2)
+```
+
+Picking the "SL" variable, let's look the correlation, now selecting this variable as result and the other as predictors: 
+
+---
+
+``` {r explore_data_two, cache=TRUE}
+round(cor(subdata,subdata$SL), digits = 2)
+```
+
+We can observe that SL and SM are most profitable.
+Lets fit our model, now using SL as response variable and SM as predictor.
+
+``` {r fitting_model, cache=TRUE}
+fitf<-lm(SL ~ SM, data=SubPerfData)
+fitf$coef
+```
+
+This gives us an equation of: SL =  2.1582 +  0.7381(SM).
+
